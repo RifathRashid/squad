@@ -92,7 +92,8 @@ def get_train_args():
 
     add_common_args(parser)
     add_train_test_args(parser)
-
+    
+    parser.add_argument('--use_pos', type=bool, default=False)
     parser.add_argument('--eval_steps',
                         type=int,
                         default=50000,

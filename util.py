@@ -45,9 +45,13 @@ class SQuAD(data.Dataset):
         super(SQuAD, self).__init__()
 
         dataset = np.load(data_path)
+        self.context_pos = torch.from_numpy(dataset['context_pos'].astype(np.int64)).long()
+        self.context_ner = torch.from_numpy(dataset['context_ner'].astype(np.int64)).long()
         self.context_idxs = torch.from_numpy(dataset['context_idxs']).long()
         self.context_char_idxs = torch.from_numpy(dataset['context_char_idxs']).long()
         self.question_idxs = torch.from_numpy(dataset['ques_idxs']).long()
+        self.question_pos = torch.from_numpy(dataset['ques_pos'].astype(np.int64)).long()
+        self.question_ner = torch.from_numpy(dataset['ques_ner'].astype(np.int64)).long()
         self.question_char_idxs = torch.from_numpy(dataset['ques_char_idxs']).long()
         self.y1s = torch.from_numpy(dataset['y1s']).long()
         self.y2s = torch.from_numpy(dataset['y2s']).long()
@@ -57,7 +61,11 @@ class SQuAD(data.Dataset):
             batch_size, c_len, w_len = self.context_char_idxs.size()
             ones = torch.ones((batch_size, 1), dtype=torch.int64)
             self.context_idxs = torch.cat((ones, self.context_idxs), dim=1)
+            self.context_pos = torch.cat((ones, self.context_pos), dim=1)
+            self.context_ner = torch.cat((ones, self.context_ner), dim=1)
             self.question_idxs = torch.cat((ones, self.question_idxs), dim=1)
+            self.question_pos = torch.cat((ones, self.question_pos), dim=1)
+            self.question_ner = torch.cat((ones, self.question_ner), dim=1)
 
             ones = torch.ones((batch_size, 1, w_len), dtype=torch.int64)
             self.context_char_idxs = torch.cat((ones, self.context_char_idxs), dim=1)
@@ -74,8 +82,12 @@ class SQuAD(data.Dataset):
     def __getitem__(self, idx):
         idx = self.valid_idxs[idx]
         example = (self.context_idxs[idx],
+                   self.context_pos[idx],
+                   self.context_ner[idx],
                    self.context_char_idxs[idx],
                    self.question_idxs[idx],
+                   self.question_pos[idx],
+                   self.question_ner[idx],
                    self.question_char_idxs[idx],
                    self.y1s[idx],
                    self.y2s[idx],
@@ -125,21 +137,25 @@ def collate_fn(examples):
         return padded
 
     # Group by tensor type
-    context_idxs, context_char_idxs, \
-        question_idxs, question_char_idxs, \
+    context_idxs, context_pos, context_ner, context_char_idxs, \
+        question_idxs, question_pos, question_ner, question_char_idxs, \
         y1s, y2s, ids = zip(*examples)
 
     # Merge into batch tensors
     context_idxs = merge_1d(context_idxs)
+    context_pos = merge_1d(context_pos)
+    context_ner = merge_1d(context_ner)
     context_char_idxs = merge_2d(context_char_idxs)
     question_idxs = merge_1d(question_idxs)
+    question_pos = merge_1d(question_pos)
+    question_ner = merge_1d(question_ner)
     question_char_idxs = merge_2d(question_char_idxs)
     y1s = merge_0d(y1s)
     y2s = merge_0d(y2s)
     ids = merge_0d(ids)
 
-    return (context_idxs, context_char_idxs,
-            question_idxs, question_char_idxs,
+    return (context_idxs, context_pos, context_ner, context_char_idxs,
+            question_idxs, question_pos, question_ner, question_char_idxs,
             y1s, y2s, ids)
 
 

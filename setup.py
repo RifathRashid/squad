@@ -130,7 +130,9 @@ def process_file(filename, data_type, word_counter, char_counter):
                         y1, y2 = answer_span[0], answer_span[-1]
                         y1s.append(y1)
                         y2s.append(y2)
-                    example = {"context_tokens": context_tokens,
+                    example = {"context": context,
+                               "question": ques,
+                               "context_tokens": context_tokens,
                                "context_chars": context_chars,
                                "ques_tokens": ques_tokens,
                                "ques_chars": ques_chars,
@@ -260,17 +262,22 @@ def build_features(args, examples, data_type, out_file, word2idx_dict, char2idx_
 
         return drop
 
-    print(f"Converting {data_type} examples to indices...")
+    print(f"Converting {data_type} examples to indices and extracting pos/ner...")
     total = 0
     total_ = 0
     meta = {}
     context_idxs = []
+    context_pos = []
+    context_ner = []
     context_char_idxs = []
     ques_idxs = []
+    ques_pos = []
+    ques_ner = []
     ques_char_idxs = []
     y1s = []
     y2s = []
     ids = []
+    feature_nlp = spacy.load("en_core_web_sm") 
     for n, example in tqdm(enumerate(examples)):
         total_ += 1
 
@@ -326,10 +333,26 @@ def build_features(args, examples, data_type, out_file, word2idx_dict, char2idx_
         y2s.append(end)
         ids.append(example["id"])
 
+        context_doc = feature_nlp(example["context"])
+        example_context_pos = np.pad(context_doc.to_array(["POS"]),(0,para_limit-len(context_doc)), 'constant', constant_values=(0,0))
+        context_pos.append(example_context_pos)
+        example_context_ner = np.pad(context_doc.to_array(["ENT_TYPE"]),(0,para_limit-len(context_doc)), 'constant', constant_values=(0,0))
+        context_ner.append(example_context_ner)
+
+        ques_doc = feature_nlp(example["question"])
+        example_ques_pos = np.pad(ques_doc.to_array(["POS"]),(0,ques_limit-len(ques_doc)), 'constant', constant_values=(0,0))
+        ques_pos.append(example_ques_pos)
+        example_ques_ner = np.pad(ques_doc.to_array(["ENT_TYPE"]),(0,ques_limit-len(ques_doc)), 'constant', constant_values=(0,0))
+        ques_ner.append(example_ques_ner)
+
     np.savez(out_file,
              context_idxs=np.array(context_idxs),
+             context_pos=np.array(context_pos),
+             context_ner=np.array(context_ner),
              context_char_idxs=np.array(context_char_idxs),
              ques_idxs=np.array(ques_idxs),
+             ques_pos=np.array(ques_pos),
+             ques_ner=np.array(ques_ner),
              ques_char_idxs=np.array(ques_char_idxs),
              y1s=np.array(y1s),
              y2s=np.array(y2s),
