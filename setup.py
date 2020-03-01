@@ -335,6 +335,7 @@ def build_features(args, examples, data_type, out_file, word2idx_dict, char2idx_
 
         context_doc = feature_nlp(example["context"])
         example_context_pos = np.pad(context_doc.to_array(["POS"]),(0,para_limit-len(example["context_tokens"])), 'constant', constant_values=(0,0))
+        assert(example_context_pos.shape == context_idx.shape)
         context_pos.append(example_context_pos)
         example_context_ner = np.pad(context_doc.to_array(["ENT_TYPE"]),(0,para_limit-len(example["context_tokens"])), 'constant', constant_values=(0,0))
         context_ner.append(example_context_ner)
