@@ -334,15 +334,15 @@ def build_features(args, examples, data_type, out_file, word2idx_dict, char2idx_
         ids.append(example["id"])
 
         context_doc = feature_nlp(example["context"])
-        example_context_pos = np.pad(context_doc.to_array(["POS"]),(0,para_limit-len(context_doc)), 'constant', constant_values=(0,0))
+        example_context_pos = np.pad(context_doc.to_array(["POS"]),(0,para_limit-len(example["context_tokens"])), 'constant', constant_values=(0,0))
         context_pos.append(example_context_pos)
-        example_context_ner = np.pad(context_doc.to_array(["ENT_TYPE"]),(0,para_limit-len(context_doc)), 'constant', constant_values=(0,0))
+        example_context_ner = np.pad(context_doc.to_array(["ENT_TYPE"]),(0,para_limit-len(example["context_tokens"])), 'constant', constant_values=(0,0))
         context_ner.append(example_context_ner)
 
         ques_doc = feature_nlp(example["question"])
-        example_ques_pos = np.pad(ques_doc.to_array(["POS"]),(0,ques_limit-len(ques_doc)), 'constant', constant_values=(0,0))
+        example_ques_pos = np.pad(ques_doc.to_array(["POS"]),(0,ques_limit-len(example["ques_tokens"])), 'constant', constant_values=(0,0))
         ques_pos.append(example_ques_pos)
-        example_ques_ner = np.pad(ques_doc.to_array(["ENT_TYPE"]),(0,ques_limit-len(ques_doc)), 'constant', constant_values=(0,0))
+        example_ques_ner = np.pad(ques_doc.to_array(["ENT_TYPE"]),(0,ques_limit-len(example["ques_tokens"])), 'constant', constant_values=(0,0))
         ques_ner.append(example_ques_ner)
 
     np.savez(out_file,
