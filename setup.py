@@ -277,7 +277,7 @@ def build_features(args, examples, data_type, out_file, word2idx_dict, char2idx_
     y1s = []
     y2s = []
     ids = []
-    feature_nlp = spacy.load("en_core_web_sm") 
+    feature_nlp = spacy.load("en")
     for n, example in tqdm(enumerate(examples)):
         total_ += 1
 

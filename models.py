@@ -63,13 +63,14 @@ class BiDAF(nn.Module):
 
         c_emb = self.emb(cw_idxs)         # (batch_size, c_len, hidden_size) (now +1 w/ pos)
         if self.use_pos:
-            cw_pos = cw_pos.type(torch.float).view(cw_pos.shape[0], cw_pos.shape[1], 1)
+            cw_pos = cw_pos.type(torch.float)
+            cw_pos = torch.unsqueeze(cw_pos, 2)
             c_emb = torch.cat((c_emb, cw_pos), dim=2)
-        print("cemb shape:", c_emb.shape)
 
         q_emb = self.emb(qw_idxs)         # (batch_size, q_len, hidden_size)
         if self.use_pos:
-            qw_pos = qw_pos.type(torch.float).view(qw_pos.shape[0], qw_pos.shape[1], 1)
+            qw_pos = qw_pos.type(torch.float)
+            qw_pos = torch.unsqueeze(qw_pos, 2)
             q_emb = torch.cat((q_emb, qw_pos), dim=2)
 
         c_enc = self.enc(c_emb, c_len)    # (batch_size, c_len, 2 * hidden_size)
