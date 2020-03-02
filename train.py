@@ -25,6 +25,7 @@ from util import collate_fn, SQuAD
 
 
 def main(args):
+    args.eval_steps = 20
     # Set up logging and devices
     args.save_dir = util.get_save_dir(args.save_dir, args.name, training=True)
     log = util.get_logger(args.save_dir, args.name)

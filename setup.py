@@ -249,6 +249,9 @@ def build_features(args, examples, data_type, out_file, word2idx_dict, char2idx_
     ans_limit = args.ans_limit
     char_limit = args.char_limit
 
+
+    # examples = examples[:100]
+
     def drop_example(ex, is_test_=False):
         if is_test_:
             drop = False
@@ -325,7 +328,7 @@ def build_features(args, examples, data_type, out_file, word2idx_dict, char2idx_
         y1s.append(start)
         y2s.append(end)
         ids.append(example["id"])
-
+    print("In build features", out_file)
     np.savez(out_file,
              context_idxs=np.array(context_idxs),
              context_char_idxs=np.array(context_char_idxs),
@@ -392,5 +395,6 @@ if __name__ == '__main__':
         args_.test_file = url_to_data_path(args_.test_url)
     glove_dir = url_to_data_path(args_.glove_url.replace('.zip', ''))
     glove_ext = f'.txt' if glove_dir.endswith('d') else f'.{args_.glove_dim}d.txt'
-    args_.glove_file = os.path.join(glove_dir, os.path.basename(glove_dir) + glove_ext)
+    #args_.glove_file = os.path.join(glove_dir, os.path.basename(glove_dir) + glove_ext)
+    args_.glove_file = './data/wiki-news-300d-1M.vec/wiki-news-300d-1M.vec'
     pre_process(args_)
