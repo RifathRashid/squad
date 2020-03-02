@@ -343,6 +343,8 @@ def build_features(args, examples, data_type, out_file, word2idx_dict, char2idx_
             # Our parse has more tokens, so we need to cut off some? TODO better way to do this?
             example_context_pos = example_context_pos[:len(example["context_tokens"])]
         assert(len(example_context_pos) == len(example["context_tokens"]))
+        example_context_pos = np.pad(example_context_pos, (0, para_limit-len(example["context_tokens"])), 'constant', constant_values=0)
+        assert(example_context_pos.shape == context_idx.shape)
         context_pos.append(example_context_pos)
         #TODO Fix ner: 0s should be turned to 1s and also match lengths up
         example_context_ner = np.pad(context_doc.to_array(["ENT_TYPE"]),(0,para_limit-len(example["context_tokens"])), 'constant', constant_values=(0,0))
@@ -357,6 +359,8 @@ def build_features(args, examples, data_type, out_file, word2idx_dict, char2idx_
         elif len(ques_doc) > len(example["ques_tokens"]):
             # Our parse has more tokens, so we need to cut off some? TODO better way to do this?
             example_ques_pos = example_ques_pos[:len(example["ques_tokens"])]
+        example_ques_pos = np.pad(example_ques_pos, (0, ques_limit-len(example["ques_tokens"])), 'constant', constant_values=0)
+        assert(example_ques_pos.shape == ques_idx.shape)
         ques_pos.append(example_ques_pos)
         example_ques_ner = np.pad(ques_doc.to_array(["ENT_TYPE"]),(0,ques_limit-len(example["ques_tokens"])), 'constant', constant_values=(0,0))
         ques_ner.append(example_ques_ner)
