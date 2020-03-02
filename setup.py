@@ -334,14 +334,29 @@ def build_features(args, examples, data_type, out_file, word2idx_dict, char2idx_
         ids.append(example["id"])
 
         context_doc = feature_nlp(example["context"])
-        example_context_pos = np.pad(context_doc.to_array(["POS"]),(0,para_limit-len(example["context_tokens"])), 'constant', constant_values=(0,0))
-        assert(example_context_pos.shape == context_idx.shape)
+        example_context_pos = context_doc.to_array(["POS"])
+        # We need to match the sizes up
+        if len(example["context_tokens"]) > len(context_doc):
+            # Original parse has more tokens, so pad ours with 1s to match (0s are not counted in length)
+            example_context_pos = np.pad(example_context_pos, (0, len(example["context_tokens"])-len(context_doc)), 'constant', constant_values=1)
+        elif len(context_doc) > len(example["context_tokens"]):
+            # Our parse has more tokens, so we need to cut off some? TODO better way to do this?
+            example_context_pos = example_context_pos[:len(example["context_tokens"])]
+        assert(len(example_context_pos) == len(example["context_tokens"]))
         context_pos.append(example_context_pos)
+        #TODO Fix ner: 0s should be turned to 1s and also match lengths up
         example_context_ner = np.pad(context_doc.to_array(["ENT_TYPE"]),(0,para_limit-len(example["context_tokens"])), 'constant', constant_values=(0,0))
         context_ner.append(example_context_ner)
 
         ques_doc = feature_nlp(example["question"])
-        example_ques_pos = np.pad(ques_doc.to_array(["POS"]),(0,ques_limit-len(example["ques_tokens"])), 'constant', constant_values=(0,0))
+        example_ques_pos = ques_doc.to_array(["POS"])
+        # We need to match the sizes up
+        if len(example["ques_tokens"]) > len(ques_doc):
+            # Original parse has more tokens, so pad ours with 1s to match (0s are not counted in length)
+            example_ques_pos = np.pad(example_ques_pos, (0, len(example["ques_tokens"])-len(ques_doc)), 'constant', constant_values=1)
+        elif len(ques_doc) > len(example["ques_tokens"]):
+            # Our parse has more tokens, so we need to cut off some? TODO better way to do this?
+            example_ques_pos = example_ques_pos[:len(example["ques_tokens"])]
         ques_pos.append(example_ques_pos)
         example_ques_ner = np.pad(ques_doc.to_array(["ENT_TYPE"]),(0,ques_limit-len(example["ques_tokens"])), 'constant', constant_values=(0,0))
         ques_ner.append(example_ques_ner)
