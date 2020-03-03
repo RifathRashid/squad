@@ -44,7 +44,8 @@ def main(args):
     # Get model
     log.info('Building model...')
     model = BiDAF(word_vectors=word_vectors,
-                  hidden_size=args.hidden_size)
+                  hidden_size=args.hidden_size,
+                  use_pos=args.use_pos)
     model = nn.DataParallel(model, gpu_ids)
     log.info(f'Loading checkpoint from {args.load_path}...')
     model = util.load_model(model, args.load_path, gpu_ids, return_step=False)
@@ -71,14 +72,19 @@ def main(args):
         gold_dict = json_load(fh)
     with torch.no_grad(), \
             tqdm(total=len(dataset)) as progress_bar:
-        for cw_idxs, cc_idxs, qw_idxs, qc_idxs, y1, y2, ids in data_loader:
+        for cw_idxs, cw_pos, cw_ner, cc_idxs, qw_idxs, qw_pos, qw_ner, qc_idxs, y1, y2, ids in data_loader:
             # Setup for forward
             cw_idxs = cw_idxs.to(device)
             qw_idxs = qw_idxs.to(device)
+            if args.use_pos:
+                cw_pos = cw_pos.to(device)
+                cw_ner = cw_ner.to(device)
+                qw_pos = qw_pos.to(device)
+                qw_ner = qw_ner.to(device)
             batch_size = cw_idxs.size(0)
 
             # Forward
-            log_p1, log_p2 = model(cw_idxs, qw_idxs)
+            log_p1, log_p2 = model(cw_idxs, cw_pos, cw_ner, qw_idxs, qw_pos, qw_ner)
             y1, y2 = y1.to(device), y2.to(device)
             loss = F.nll_loss(log_p1, y1) + F.nll_loss(log_p2, y2)
             nll_meter.update(loss.item(), batch_size)
