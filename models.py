@@ -80,7 +80,7 @@ class BiDAF(nn.Module):
             q_emb = torch.cat((q_emb, qw_pos), dim=2)
         if self.use_ner:
             qw_ner = qw_ner.type(torch.float)
-            qw_ner = torch.unsqueeze(qw_pos, 2)
+            qw_ner = torch.unsqueeze(qw_ner, 2)
             q_emb = torch.cat((q_emb, qw_ner), dim=2)
 
         c_enc = self.enc(c_emb, c_len)    # (batch_size, c_len, 2 * hidden_size)
