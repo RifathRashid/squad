@@ -29,17 +29,19 @@ class BiDAF(nn.Module):
         hidden_size (int): Number of features in the hidden state at each layer.
         drop_prob (float): Dropout probability.
     """
-    def __init__(self, word_vectors, hidden_size, use_pos, drop_prob=0.):
+    def __init__(self, word_vectors, hidden_size, use_pos, use_ner, drop_prob=0.):
         super(BiDAF, self).__init__()
         self.emb = layers.Embedding(word_vectors=word_vectors,
                                     hidden_size=hidden_size,
                                     drop_prob=drop_prob)
 
         self.use_pos = use_pos
+        self.use_ner = use_ner
+        rnn_input_size = hidden_size
         if use_pos:
-            rnn_input_size = hidden_size+1
-        else:
-            rnn_input_size = hidden_size
+            rnn_input_size += 1
+        if use_ner:
+            rnn_input_size += 1
         self.enc = layers.RNNEncoder(input_size=rnn_input_size,
                                      hidden_size=hidden_size,
                                      num_layers=1,
@@ -61,17 +63,25 @@ class BiDAF(nn.Module):
         q_mask = torch.zeros_like(qw_idxs) != qw_idxs
         c_len, q_len = c_mask.sum(-1), q_mask.sum(-1)
 
-        c_emb = self.emb(cw_idxs)         # (batch_size, c_len, hidden_size) (now +1 w/ pos)
+        c_emb = self.emb(cw_idxs)         # (batch_size, c_len, hidden_size)
         if self.use_pos:
             cw_pos = cw_pos.type(torch.float)
             cw_pos = torch.unsqueeze(cw_pos, 2)
             c_emb = torch.cat((c_emb, cw_pos), dim=2)
+        if self.use_ner:
+            cw_ner = cw_ner.type(torch.float)
+            cw_ner = torch.unsqueeze(cw_ner, 2)
+            c_emb = torch.cat((c_emb, cw_ner), dim=2)
 
         q_emb = self.emb(qw_idxs)         # (batch_size, q_len, hidden_size)
         if self.use_pos:
             qw_pos = qw_pos.type(torch.float)
             qw_pos = torch.unsqueeze(qw_pos, 2)
             q_emb = torch.cat((q_emb, qw_pos), dim=2)
+        if self.use_ner:
+            qw_ner = qw_ner.type(torch.float)
+            qw_ner = torch.unsqueeze(qw_pos, 2)
+            q_emb = torch.cat((q_emb, qw_ner), dim=2)
 
         c_enc = self.enc(c_emb, c_len)    # (batch_size, c_len, 2 * hidden_size)
         q_enc = self.enc(q_emb, q_len)    # (batch_size, q_len, 2 * hidden_size)

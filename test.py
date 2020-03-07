@@ -45,7 +45,8 @@ def main(args):
     log.info('Building model...')
     model = BiDAF(word_vectors=word_vectors,
                   hidden_size=args.hidden_size,
-                  use_pos=args.use_pos)
+                  use_pos=args.use_pos,
+                  use_ner=args.use_ner)
     model = nn.DataParallel(model, gpu_ids)
     log.info(f'Loading checkpoint from {args.load_path}...')
     model = util.load_model(model, args.load_path, gpu_ids, return_step=False)
@@ -78,8 +79,9 @@ def main(args):
             qw_idxs = qw_idxs.to(device)
             if args.use_pos:
                 cw_pos = cw_pos.to(device)
-                cw_ner = cw_ner.to(device)
                 qw_pos = qw_pos.to(device)
+            if args.use_ner:
+                cw_ner = cw_ner.to(device)
                 qw_ner = qw_ner.to(device)
             batch_size = cw_idxs.size(0)
 

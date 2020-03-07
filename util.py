@@ -46,14 +46,12 @@ class SQuAD(data.Dataset):
 
         dataset = np.load(data_path)
         self.context_pos = torch.from_numpy(dataset['context_pos'].astype(np.int64)).long()
-        self.context_ner = torch.zeros(self.context_pos.shape).long()
-        #self.context_ner = torch.from_numpy(dataset['context_ner'].astype(np.int64)).long()
+        self.context_ner = torch.from_numpy(dataset['context_ner'].astype(np.int64)).long()
         self.context_idxs = torch.from_numpy(dataset['context_idxs']).long()
         self.context_char_idxs = torch.from_numpy(dataset['context_char_idxs']).long()
         self.question_idxs = torch.from_numpy(dataset['ques_idxs']).long()
         self.question_pos = torch.from_numpy(dataset['ques_pos'].astype(np.int64)).long()
-        self.question_ner = torch.zeros(self.question_pos.shape).long()
-        #self.question_ner = torch.from_numpy(dataset['ques_ner'].astype(np.int64)).long()
+        self.question_ner = torch.from_numpy(dataset['ques_ner'].astype(np.int64)).long()
         self.question_char_idxs = torch.from_numpy(dataset['ques_char_idxs']).long()
         self.y1s = torch.from_numpy(dataset['y1s']).long()
         self.y2s = torch.from_numpy(dataset['y2s']).long()
@@ -143,10 +141,13 @@ def collate_fn(examples):
         question_idxs, question_pos, question_ner, question_char_idxs, \
         y1s, y2s, ids = zip(*examples)
 
+    #print(context_idxs.shape, context_pos.shape, context_ner.shape)
     # Merge into batch tensors
     context_idxs = merge_1d(context_idxs)
     context_pos = merge_1d(context_pos)
     context_ner = merge_1d(context_ner)
+    print(context_idxs.shape, context_pos.shape, context_ner.shape)
+    assert(context_idxs.shape == context_ner.shape)
     context_char_idxs = merge_2d(context_char_idxs)
     question_idxs = merge_1d(question_idxs)
     question_pos = merge_1d(question_pos)

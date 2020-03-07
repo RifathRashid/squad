@@ -49,6 +49,7 @@ def main(args):
     model = BiDAF(word_vectors=word_vectors,
                   hidden_size=args.hidden_size,
                   use_pos=args.use_pos,
+                  use_ner=args.use_ner,
                   drop_prob=args.drop_prob)
     model = nn.DataParallel(model, args.gpu_ids)
     if args.load_path:
@@ -103,7 +104,8 @@ def main(args):
                 if args.use_pos:
                     cw_pos = cw_pos.to(device)
                     qw_pos = qw_pos.to(device)
-                    cw_ner = cw_ner.to(device) #TODO separate into ner case as well
+                if args.use_ner:
+                    cw_ner = cw_ner.to(device)
                     qw_ner = qw_ner.to(device)
                 qw_idxs = qw_idxs.to(device)
                 batch_size = cw_idxs.size(0)
@@ -143,7 +145,8 @@ def main(args):
                                                   args.dev_eval_file,
                                                   args.max_ans_len,
                                                   args.use_squad_v2,
-                                                  args.use_pos)
+                                                  args.use_pos,
+                                                  args.use_ner)
                     saver.save(step, model, results[args.metric_name], device)
                     ema.resume(model)
 
@@ -163,7 +166,7 @@ def main(args):
                                    num_visuals=args.num_visuals)
 
 
-def evaluate(model, data_loader, device, eval_file, max_len, use_squad_v2, use_pos):
+def evaluate(model, data_loader, device, eval_file, max_len, use_squad_v2, use_pos, use_ner):
     nll_meter = util.AverageMeter()
 
     model.eval()
@@ -177,8 +180,9 @@ def evaluate(model, data_loader, device, eval_file, max_len, use_squad_v2, use_p
             cw_idxs = cw_idxs.to(device)
             if use_pos:
                 cw_pos = cw_pos.to(device)
-                cw_ner = cw_ner.to(device)
                 qw_pos = qw_pos.to(device)
+            if use_ner:
+                cw_ner = cw_ner.to(device)
                 qw_ner = qw_ner.to(device)
             qw_idxs = qw_idxs.to(device)
             batch_size = cw_idxs.size(0)

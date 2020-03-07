@@ -346,6 +346,7 @@ def build_features(args, examples, data_type, out_file, word2idx_dict, char2idx_
         example_context_pos = np.pad(example_context_pos, (0, para_limit-len(example["context_tokens"])), 'constant', constant_values=0)
         assert(example_context_pos.shape == context_idx.shape)
         context_pos.append(example_context_pos)
+
         example_context_ner = context_doc.to_array(["ENT_TYPE"])
         # Turn all 0s to 1s, since 0s are not counted in length of array
         example_context_ner = np.where(example_context_ner == 0, 1, example_context_ner)
