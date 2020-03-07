@@ -141,12 +141,10 @@ def collate_fn(examples):
         question_idxs, question_pos, question_ner, question_char_idxs, \
         y1s, y2s, ids = zip(*examples)
 
-    #print(context_idxs.shape, context_pos.shape, context_ner.shape)
     # Merge into batch tensors
     context_idxs = merge_1d(context_idxs)
     context_pos = merge_1d(context_pos)
     context_ner = merge_1d(context_ner)
-    print(context_idxs.shape, context_pos.shape, context_ner.shape)
     assert(context_idxs.shape == context_ner.shape)
     context_char_idxs = merge_2d(context_char_idxs)
     question_idxs = merge_1d(question_idxs)
