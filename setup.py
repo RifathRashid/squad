@@ -454,5 +454,6 @@ if __name__ == '__main__':
         args_.test_file = url_to_data_path(args_.test_url)
     glove_dir = url_to_data_path(args_.glove_url.replace('.zip', ''))
     glove_ext = f'.txt' if glove_dir.endswith('d') else f'.{args_.glove_dim}d.txt'
-    args_.glove_file = os.path.join(glove_dir, os.path.basename(glove_dir) + glove_ext)
+    #args_.glove_file = os.path.join(glove_dir, os.path.basename(glove_dir) + glove_ext)
+    args_.glove_file = './data/wiki-news-300d-1M.vec/wiki-news-300d-1M.vec'
     pre_process(args_)
