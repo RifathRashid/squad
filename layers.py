@@ -10,6 +10,7 @@ import torch.nn.functional as F
 
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from util import masked_softmax
+import util
 import json
 import spacy 
 import numpy 
@@ -54,10 +55,11 @@ class Embedding(nn.Module):
         
 
 
-    def get_sequence(self, example_id, data_set, max_len, is_context):
+    def get_sequence(self, example_id, data_set, max_len, is_context, device):
 
         is_using_gpu = spacy.prefer_gpu()
         if is_using_gpu:
+            print('Preferred GPU')
             torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
         lookup_dict = None
@@ -71,8 +73,8 @@ class Embedding(nn.Module):
 
         doc = self.nlp(sentence)
 
-        doc.tensor = torch.tensor(doc.tensor)
-        pad_vector = torch.zeros([1, 768])
+        doc.tensor = torch.tensor(doc.tensor, device=device)
+        pad_vector = torch.zeros([1, 768], device=device)
 
         for i in range(max_len - doc.tensor.shape[0]): 
             doc.tensor = torch.cat((doc.tensor, pad_vector), dim=0)
@@ -87,16 +89,20 @@ class Embedding(nn.Module):
      
 
     def forward(self, x, ids, data_set, max_len, is_context):
-        
+        device, _ = util.get_available_devices()
         if max_len:
             ids = ids.tolist()
+            print('='*80)
             for i, example_id in enumerate(ids):
-                ids[i] = self.get_sequence(example_id, data_set, max_len, is_context)
+                ids[i] = self.get_sequence(example_id, data_set, max_len, is_context, device)
+                print(ids[i].shape)
+
+            print('='*80)
 
             
             ids = torch.stack(ids)
-  
         
+        ids.to(device)
 
         
         emb = self.embed(x)   # (batch_size, seq_len, embed_size)
