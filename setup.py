@@ -95,6 +95,7 @@ def process_file(filename, data_type, word_counter, char_counter):
     total = 0
     with open(filename, "r") as fh:
         source = json.load(fh)
+     
         for article in tqdm(source["data"]):
             for para in article["paragraphs"]:
                 context = para["context"].replace(
@@ -102,8 +103,9 @@ def process_file(filename, data_type, word_counter, char_counter):
                 context_tokens = word_tokenize(context)
                 context_chars = [list(token) for token in context_tokens]
                 spans = convert_idx(context, context_tokens)
-                for token in context_tokens:
-                    word_counter[token] += len(para["qas"])
+            
+                for token in context_tokens: 
+                    word_counter[token] += len(para["qas"]) #For every word in context --> number of associated qas
                     for char in token:
                         char_counter[char] += len(para["qas"])
                 for qa in para["qas"]:
@@ -136,7 +138,9 @@ def process_file(filename, data_type, word_counter, char_counter):
                                "ques_chars": ques_chars,
                                "y1s": y1s,
                                "y2s": y2s,
-                               "id": total}
+                               "id": total, 
+                               "context": context,
+                               "question": ques}
                     examples.append(example)
                     eval_examples[str(total)] = {"context": context,
                                                  "question": ques,
@@ -243,6 +247,14 @@ def is_answerable(example):
     return len(example['y2s']) > 0 and len(example['y1s']) > 0
 
 
+
+def save(filename, obj, message=None):
+    if message is not None:
+        print(f"Saving {message}...")
+        with open(filename, "w") as fh:
+            json.dump(obj, fh)
+
+
 def build_features(args, examples, data_type, out_file, word2idx_dict, char2idx_dict, is_test=False):
     para_limit = args.test_para_limit if is_test else args.para_limit
     ques_limit = args.test_ques_limit if is_test else args.ques_limit
@@ -274,6 +286,14 @@ def build_features(args, examples, data_type, out_file, word2idx_dict, char2idx_
     y1s = []
     y2s = []
     ids = []
+
+    id_to_context_train = {}
+    id_to_ques_train = {}
+
+    id_to_context_dev = {}
+    id_to_ques_dev = {}
+
+
     for n, example in tqdm(enumerate(examples)):
         total_ += 1
 
@@ -328,6 +348,15 @@ def build_features(args, examples, data_type, out_file, word2idx_dict, char2idx_
         y1s.append(start)
         y2s.append(end)
         ids.append(example["id"])
+
+        if data_type == "train":
+            id_to_context_train[example["id"]] = example["context"]
+            id_to_ques_train[example["id"]] = example["question"]
+        
+        if data_type == "dev":
+            id_to_context_dev[example["id"]] = example["context"]
+            id_to_ques_dev[example["id"]] = example["question"]
+    
     print("In build features", out_file)
     np.savez(out_file,
              context_idxs=np.array(context_idxs),
@@ -337,16 +366,18 @@ def build_features(args, examples, data_type, out_file, word2idx_dict, char2idx_
              y1s=np.array(y1s),
              y2s=np.array(y2s),
              ids=np.array(ids))
+
+    if data_type == "train":
+        save("./data/id_to_context_train.json", id_to_context_train, message='id_to_context_train')
+        save("./data/id_to_ques_train.json", id_to_ques_train, message='id_to_ques_train')
+
+    if data_type == "dev":
+        save("./data/id_to_context_dev.json", id_to_context_dev, message='id_to_context_dev')
+        save("./data/id_to_ques_dev.json", id_to_ques_dev, message='id_to_ques_dev')
+
     print(f"Built {total} / {total_} instances of features in total")
     meta["total"] = total
     return meta
-
-
-def save(filename, obj, message=None):
-    if message is not None:
-        print(f"Saving {message}...")
-        with open(filename, "w") as fh:
-            json.dump(obj, fh)
 
 
 def pre_process(args):

@@ -10,6 +10,10 @@ import torch.nn.functional as F
 
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from util import masked_softmax
+import json
+import spacy 
+import numpy 
+from numpy.testing import assert_almost_equal
 
 
 class Embedding(nn.Module):
@@ -27,11 +31,77 @@ class Embedding(nn.Module):
         super(Embedding, self).__init__()
         self.drop_prob = drop_prob
         self.embed = nn.Embedding.from_pretrained(word_vectors)
-        self.proj = nn.Linear(word_vectors.size(1), hidden_size, bias=False)
+
+        # Edited
+
+        self.proj = nn.Linear(768, hidden_size, bias=False)
         self.hwy = HighwayEncoder(2, hidden_size)
 
-    def forward(self, x):
+        with open('./data/id_to_context_train.json') as json_file: 
+            self.id_to_context_train = json.load(json_file)
+
+        with open('./data/id_to_context_dev.json') as json_file:
+            self.id_to_context_dev = json.load(json_file)
+
+        with open('./data/id_to_ques_train.json') as json_file:
+            self.id_to_ques_train = json.load(json_file)
+
+        with open('./data/id_to_ques_dev.json') as json_file:
+            self.id_to_ques_dev = json.load(json_file)
+
+
+        self.nlp = spacy.load("en_trf_bertbaseuncased_lg")
+        
+
+
+    def get_sequence(self, example_id, data_set, max_len, is_context):
+
+        is_using_gpu = spacy.prefer_gpu()
+        if is_using_gpu:
+            torch.set_default_tensor_type("torch.cuda.FloatTensor")
+
+        lookup_dict = None
+
+        if is_context:
+            lookup_dict = self.id_to_context_train if data_set == "train" else self.id_to_context_dev
+        else: 
+            lookup_dict = self.id_to_ques_train if data_set == "train" else self.id_to_ques_dev
+
+        sentence = lookup_dict[str(example_id)]
+
+        doc = self.nlp(sentence)
+
+        doc.tensor = torch.tensor(doc.tensor)
+        pad_vector = torch.zeros([1, 768])
+
+        for i in range(max_len - doc.tensor.shape[0]): 
+            doc.tensor = torch.cat((doc.tensor, pad_vector), dim=0)
+
+        return doc.tensor
+   
+        
+       
+
+
+
+     
+
+    def forward(self, x, ids, data_set, max_len, is_context):
+        
+        if max_len:
+            ids = ids.tolist()
+            for i, example_id in enumerate(ids):
+                ids[i] = self.get_sequence(example_id, data_set, max_len, is_context)
+
+            
+            ids = torch.stack(ids)
+  
+        
+
+        
         emb = self.embed(x)   # (batch_size, seq_len, embed_size)
+        if max_len:
+            emb = ids
         emb = F.dropout(emb, self.drop_prob, self.training)
         emb = self.proj(emb)  # (batch_size, seq_len, hidden_size)
         emb = self.hwy(emb)   # (batch_size, seq_len, hidden_size)
